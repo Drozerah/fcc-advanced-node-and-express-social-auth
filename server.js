@@ -68,12 +68,9 @@ mongo.connect(process.env.DATABASE, mongodbOptions, (err, connection) => {
             return cb(null, profile)
           }
         ))
-        // TODO :
-        // [ ] - call passport to authenticate 'github'
+
         app.route('/auth/github').get(passport.authenticate('github'))
           
-        // TODO :
-        // [ ] - call passport to authenticate 'github' with a failure redirect to '/' and then if that is successful redirect to '/profile'
         app.route('/auth/github/callback')
         .get(passport.authenticate('github', { failureRedirect: '/' }), (req, res) => {
           console.log('[/auth/github/callback][redirect]') // !DEBUG
