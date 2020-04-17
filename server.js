@@ -6,6 +6,7 @@ const fccTesting  = require('./freeCodeCamp/fcctesting.js')
 const session     = require('express-session')
 const mongo       = require('mongodb').MongoClient
 const passport    = require('passport')
+const GitHubStrategy = require('passport-github').Strategy
 
 const app = express()
 
@@ -18,12 +19,12 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.set('view engine', 'pug')
 // MongoDB client options
 const mongodbOptions = { useUnifiedTopology: true }
-mongo.connect(process.env.DATABASE, mongodbOptions, (err, db) => {
+mongo.connect(process.env.DATABASE, mongodbOptions, (err, connection) => {
     if(err) {
         console.log('Database error: ' + err)
     } else {
         console.log('Successful database connection')
-      
+        const db = connection.db()
         app.use(session({
           secret: process.env.SESSION_SECRET,
           resave: true,
@@ -36,6 +37,7 @@ mongo.connect(process.env.DATABASE, mongodbOptions, (err, db) => {
           if (req.isAuthenticated()) {
               return next()
           }
+          console.log('[ensureAuthenticated][redirect]') // !DEBUG
           res.redirect('/')
         }
 
@@ -56,11 +58,27 @@ mongo.connect(process.env.DATABASE, mongodbOptions, (err, db) => {
         /*
         *  ADD YOUR CODE BELOW
         */
-      
-      
-      
-      
-      
+        passport.use(new GitHubStrategy({
+            clientID: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            callbackURL: "https://fcc-adv-node-exp-social-auth.herokuapp.com/auth/github/callback"
+          },
+          function(accessToken, refreshToken, profile, cb) {
+            // returns the user profile from github API
+            return cb(null, profile)
+          }
+        ))
+        // TODO :
+        // [ ] - call passport to authenticate 'github'
+        app.route('/auth/github').get(passport.authenticate('github'))
+          
+        // TODO :
+        // [ ] - call passport to authenticate 'github' with a failure redirect to '/' and then if that is successful redirect to '/profile'
+        app.route('/auth/github/callback')
+        .get(passport.authenticate('github', { failureRedirect: '/' }), (req, res) => {
+          console.log('[/auth/github/callback][redirect]') // !DEBUG
+          res.redirect('/profile')
+        })
       
       
         /*
